@@ -1,0 +1,68 @@
+name: Projet Cloud_Computing
+
+on:
+  push:
+    branches:
+      - main  # Surveille les commits poussés sur la branche main
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Vérifie le dépôt
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Connexion au registre GitHub Container Registry
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    # Extraire les métadonnées pour les tags Docker
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v3
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=sha
+          type=raw,value=latest
+
+    # Construire et pousser l'image Docker
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v3
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push-docker
+
+    steps:
+    # Vérifie le dépôt
+    - name: Checkout repository
+      uses: actions/checkout@v3
+   
+
+    # Initialisation de Terraform
+    - name: Terraform Init
+      run: terraform init
+
+    # Application de l'infrastructure
+    - name: Terraform Apply
+      run: terraform apply -auto-approve

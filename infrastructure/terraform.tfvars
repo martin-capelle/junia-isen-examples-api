@@ -1,0 +1,6 @@
+location           = "francecentral"
+resource_group_name = "junia-project-resources"
+app_service_name    = "junia-app-service"
+blob_storage_name   = "impjuniastorage"
+database_name       = "juniadb"
+vnet_name           = "junia-vnet"
